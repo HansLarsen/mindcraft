@@ -1,0 +1,28 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/javascript-node
+{
+	"name": "Node.js",
+	"build": {
+        "dockerfile": "Dockerfile",
+		"target": "developer"
+    },
+	"runArgs": [
+		"--privileged",
+		"--net=host",
+		"--ipc=host",
+		"--gpus=all"
+	],
+	"mounts": [
+		"source=${localEnv:HOME}/.Xauthority,target=/home/node/.Xauthority,type=bind",
+		"source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
+	],
+	"remoteEnv": {
+		"DISPLAY": "${localEnv:DISPLAY}"
+	},
+	"forwardPorts": [
+		11434
+	],
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"remoteUser": "node"
+}
