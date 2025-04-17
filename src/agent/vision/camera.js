@@ -1,5 +1,5 @@
 import { Viewer } from 'prismarine-viewer/viewer/lib/viewer.js';
-import { WorldView } from 'prismarine-viewer/viewer/lib/worldview.js';
+import { WorldView } from 'prismarine-viewer/viewer/lib/worldView.js';
 import { getBufferFromStream } from 'prismarine-viewer/viewer/lib/simpleUtils.js';
 
 import THREE from 'three';
@@ -11,7 +11,6 @@ import { EventEmitter } from 'events';
 import worker_threads from 'worker_threads';
 global.Worker = worker_threads.Worker;
 
-
 export class Camera extends EventEmitter {
     constructor (bot, fp) {
         super();
@@ -21,7 +20,11 @@ export class Camera extends EventEmitter {
         this.width = 800;
         this.height = 512;
         this.canvas = createCanvas(this.width, this.height);
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
+        this.renderer = new THREE.WebGLRenderer({
+            width: this.width,
+            height: this.height,
+            canvas: this.canvas
+         });
         this.viewer = new Viewer(this.renderer);
         this._init().then(() => {
             this.emit('ready');

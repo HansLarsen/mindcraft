@@ -33,6 +33,9 @@ export class Local {
                 if (res) {
                     res = res['message']['content'];
                 } else {
+                    if (attempt < maxAttempts - 1) {
+                        continue;
+                    }
                     res = 'No response data.';
                 }
             } catch (err) {
@@ -103,5 +106,17 @@ export class Local {
             console.error(err);
         }
         return data;
+    }
+
+    async sendVisionRequest(messages, systemMessage, imageBuffer) {
+        const imageMessages = [...messages];
+        imageMessages.push({
+                role: "user",
+                content: "Here is a minecraft image to analysis",
+                images:  [
+                    `${imageBuffer.toString('base64')}` // data:image/jpeg;base64,
+                ]
+        });
+        return this.sendRequest(imageMessages, systemMessage);
     }
 }
