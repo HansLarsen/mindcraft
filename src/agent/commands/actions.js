@@ -417,6 +417,19 @@ export const actionsList = [
         }
     },
     {
+        name: '!endConversation',
+        description: 'End the conversation with the given player.',
+        params: {
+        },
+        perform: async function (agent, ) {
+            if (!convoManager.inConversation())
+                return `Not in conversation.`;
+            let player_name = convoManager.inConversation();
+            convoManager.endConversation(player_name);
+            return `Converstaion with ${player_name} ended.`;
+        }
+    },
+    {
         name: '!lookAtPlayer',
         description: 'Look at a player or look in the same direction as the player.',
         params: {

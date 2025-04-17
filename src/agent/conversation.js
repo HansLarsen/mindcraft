@@ -222,7 +222,11 @@ class ConversationManager {
     inConversation(other_agent=null) {
         if (other_agent)
             return this.convos[other_agent]?.active;
-        return Object.values(this.convos).some(c => c.active);
+        let active_convo = Object.values(this.convos).find(c => c.active);
+        if (active_convo != null) {
+            return active_convo.name;
+        }
+        return null;
     }
     
     endConversation(sender) {
