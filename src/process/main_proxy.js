@@ -56,7 +56,7 @@ class MainProxy {
     }
 
     registerAgent(name, process) {
-        this.socket.emit('register-agents', [name]);
+        this.socket.emit('register-agents', [{name: name, index: process.count_id}]);
         this.agent_processes[name] = process;
     }
 }

@@ -1,0 +1,41 @@
+
+<div class="viewer-container">
+    <iframe src="http://localhost:<%= agentPort %>" class="agent-viewer-frame"></iframe>
+    <div class="viewer-controls">
+        <a href="/agents" class="btn btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Agents
+        </a>
+        <button class="btn btn-refresh" onclick="document.querySelector('.agent-viewer-frame').src += ''">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<style>
+    .viewer-container {
+        height: calc(100vh - 60px); /* Account for navbar */
+        position: relative;
+    }
+    .agent-viewer-frame {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: #1a1a1a;
+    }
+    .viewer-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 100;
+        display: flex;
+        gap: 10px;
+    }
+    .btn {
+        padding: 8px 12px;
+        background: rgba(30,30,30,0.8);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>

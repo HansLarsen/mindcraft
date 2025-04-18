@@ -6,15 +6,17 @@ body {
 }
 #agents {
     background: #2d2d2d;
-    padding: 20px;
+    padding: 5px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
 h1 {
     color: #ffffff;
 }
+
 .agent {
-    margin: 10px 0;
+    margin: 10px 10px;
     padding: 10px;
     background: #363636;
     border-radius: 4px;
@@ -22,6 +24,7 @@ h1 {
     justify-content: space-between;
     align-items: center;
 }
+
 .restart-btn, .start-btn, .stop-btn {
     color: white;
     border: none;
@@ -137,4 +140,83 @@ h1 {
 
 .status-text {
     color: #aaa;
+}
+
+.agent-card {
+    background: #2d2d2d;
+    border-radius: 1px;
+    margin-bottom: 2px;
+    padding: 2px;
+}
+
+.agent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+}
+
+.agent-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.viewer-container {
+    margin-top: 15px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #1a1a1a;
+    border: 1px solid #333;
+}
+
+.agent-viewer-frame {
+    width: 100%;
+    height: 300px; /* Fixed height or use min-height */
+    border: none;
+    background: #000;
+}
+
+.viewer-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    background: #252525;
+    border-bottom: 1px solid #333;
+}
+
+.viewer-btn {
+    background: #3a3a3a;
+    color: #ddd;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.viewer-btn:hover {
+    background: #4a4a4a;
+}
+
+.message-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.message-input {
+    padding: 5px;
+    background: #252525;
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 3px;
+}
+
+.global-controls {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
 }

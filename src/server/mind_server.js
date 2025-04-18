@@ -9,6 +9,7 @@ import expressLayouts from 'express-ejs-layouts';
 let io;
 let server;
 const registeredAgents = new Set();
+const registeredAgentsPort = {};
 const inGameAgents = {};
 const agentManagers = {}; // socket for main process that registers/controls agents
 
@@ -58,10 +59,12 @@ export function createMindServer(port = 8080) {
         });
     });
 
-    app.get('/agents/:id', (req, res) => {
-        res.render('agent-details', {
-            title: 'Agent Details',
-            currentPage: 'agents' // Still highlights "Agents" in navbar
+    app.get('/agents/:name/view', (req, res) => {
+        res.render('agent-viewer', {
+            title: `${req.params.name} Viewer`,
+            currentPage: 'agents',
+            agentName: req.params.name,
+            agentPort: 3000 // Implement this function
         });
     });
 
@@ -73,10 +76,11 @@ export function createMindServer(port = 8080) {
         agentsUpdate(socket);
 
         socket.on('register-agents', (agentNames) => {
-            console.log(`Registering agents: ${agentNames}`);
-            agentNames.forEach(name => registeredAgents.add(name));
-            for (let name of agentNames) {
-                agentManagers[name] = socket;
+            console.log(`Registering agents: ${agentNames.name}`);
+            agentNames.forEach(agent => registeredAgents.add(agent.name));
+            agentNames.forEach(agent => registeredAgentsPort[agent.name] = agent.index);
+            for (let agent of agentNames) {
+                agentManagers[agent.name] = socket;
             }
             socket.emit('register-agents-success');
             agentsUpdate();
@@ -187,7 +191,7 @@ function agentsUpdate(socket) {
     }
     let agents = [];
     registeredAgents.forEach(name => {
-        agents.push({name, in_game: !!inGameAgents[name]});
+        agents.push({name, in_game: !!inGameAgents[name], port: 3000 + registeredAgentsPort[name]});
     });
     socket.emit('agents-update', agents);
 }
