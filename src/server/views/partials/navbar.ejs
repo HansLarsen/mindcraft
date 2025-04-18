@@ -1,0 +1,26 @@
+<nav class="navbar">
+    <div class="navbar-container">
+        <div class="navbar-brand">
+            <span class="navbar-logo">🧠</span>
+            <span class="navbar-title">Mindcraft</span>
+        </div>
+        <ul class="navbar-links">
+            <li><a href="/" class="nav-link <%= currentPage === 'dashboard' ? 'active' : '' %>">
+                <i class="fas fa-home"></i> Dashboard
+            </a></li>
+            <li><a href="/agents" class="nav-link <%= currentPage === 'agents' ? 'active' : '' %>">
+                <i class="fas fa-robot"></i> Agents
+            </a></li>
+            <li><a href="/settings" class="nav-link <%= currentPage === 'settings' ? 'active' : '' %>">
+                <i class="fas fa-cog"></i> Settings
+            </a></li>
+            <li><a href="/logs" class="nav-link <%= currentPage === 'logs' ? 'active' : '' %>">
+                <i class="fas fa-clipboard-list"></i> Logs
+            </a></li>
+        </ul>
+        <div class="navbar-status">
+            <span class="status-indicator online"></span>
+            <span class="status-text">Server Connected</span>
+        </div>
+    </div>
+</nav>

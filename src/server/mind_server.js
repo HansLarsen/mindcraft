@@ -3,6 +3,7 @@ import express from 'express';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import expressLayouts from 'express-ejs-layouts';
 
 // Module-level variables
 let io;
@@ -17,9 +18,52 @@ export function createMindServer(port = 8080) {
     server = http.createServer(app);
     io = new Server(server);
 
-    // Serve static files
+    // Get directory name
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    
+    app.use(expressLayouts);
+    app.set('layout', 'layout'); // Specify your default layout
+    // Configure view engine
+    app.set('views', path.join(__dirname, 'views'));
+    app.set('view engine', 'ejs');
+
+    // Serve static files
     app.use(express.static(path.join(__dirname, 'public')));
+
+    app.get('/', (req, res) => {
+        res.render('dashboard', {
+            title: 'Mindcraft Control Panel',
+            currentPage: 'dashboard'
+        });
+    });
+    
+    app.get('/agents', (req, res) => {
+        res.render('agents', {
+            title: 'Mindcraft Control Panel',
+            currentPage: 'agents'
+        });
+    });
+    
+    app.get('/logs', (req, res) => {
+        res.render('logs', {
+            title: 'Mindcraft Control Panel',
+            currentPage: 'logs'
+        });
+    });
+    
+    app.get('/settings', (req, res) => {
+        res.render('settings', {
+            title: 'Mindcraft Control Panel',
+            currentPage: 'settings'
+        });
+    });
+
+    app.get('/agents/:id', (req, res) => {
+        res.render('agent-details', {
+            title: 'Agent Details',
+            currentPage: 'agents' // Still highlights "Agents" in navbar
+        });
+    });
 
     // Socket.io connection handling
     io.on('connection', (socket) => {
