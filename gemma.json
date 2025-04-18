@@ -1,9 +1,12 @@
 {
-    "name": "andy",
+    "name": "gemma",
     "model": {
         "api": "ollama",
         "model": "gemma3:12b",
-        "url": "http://127.0.0.1:11434"
+        "url": "http://127.0.0.1:11434",
+        "params": {
+            "temperature": 0.2
+        }
     },
     "embedding": {
         "api": "ollama",
