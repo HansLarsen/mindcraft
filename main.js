@@ -6,6 +6,9 @@ import { createMindServer } from './src/server/mind_server.js';
 import { mainProxy } from './src/process/main_proxy.js';
 import { readFileSync } from 'fs';
 
+import segfaultHandler from 'segfault-handler';
+segfaultHandler.registerHandler('crash.log');
+
 function parseArguments() {
     return yargs(hideBin(process.argv))
         .option('profiles', {
@@ -44,8 +47,8 @@ async function main() {
         const agent_process = new AgentProcess();
         const profile = readFileSync(profiles[i], 'utf8');
         const agent_json = JSON.parse(profile);
-        mainProxy.registerAgent(agent_json.name, agent_process);
         agent_process.start(profiles[i], load_memory, init_message, i, args.task_path, args.task_id);
+        mainProxy.registerAgent(agent_json.name, agent_process);
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
 }
