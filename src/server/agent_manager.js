@@ -1,73 +1,61 @@
+import { eventBus } from '../middleware/eventBus.js';
+
 export class AgentManager {
     constructor(io) {
         this.registeredAgents = new Set();
         this.registeredAgentsPort = {};
         this.inGameAgents = {};
-        this.agentManagers = {};
         this.io = io;
-    }
 
-    handleConnection(socket) {
         let curAgentName = null;
 
-        socket.on('register-agents', (agentNames) => {
+        eventBus.on('register-agents', (agentNames) => {
             console.log(`Registering agents: ${agentNames.name}`);
             agentNames.forEach(agent => this.registeredAgents.add(agent.name));
             agentNames.forEach(agent => this.registeredAgentsPort[agent.name] = agent.index);
-            for (let agent of agentNames) {
-                this.agentManagers[agent.name] = socket;
-            }
-            socket.emit('register-agents-success');
+            eventBus.emit('register-agents-success');
             this.agentsUpdate();
         });
 
-        socket.on('login-agent', (agentName) => {
+        eventBus.on('login-agent', (agentName) => {
             if (curAgentName && curAgentName !== agentName) {
                 console.warn(`Agent ${agentName} already logged in as ${curAgentName}`);
                 return;
             }
             if (this.registeredAgents.has(agentName)) {
                 curAgentName = agentName;
-                this.inGameAgents[agentName] = socket;
+                this.inGameAgents[agentName] = true;
                 this.agentsUpdate();
             } else {
                 console.warn(`Agent ${agentName} not registered`);
             }
         });
 
-        socket.on('logout-agent', (agentName) => {
+        eventBus.on('logout-agent', (agentName) => {
             if (this.inGameAgents[agentName]) {
                 delete this.inGameAgents[agentName];
                 this.agentsUpdate();
             }
         });
 
-        socket.on('disconnect', () => {
+        eventBus.on('disconnect', () => {
             console.log('Client disconnected');
             if (this.inGameAgents[curAgentName]) {
                 delete this.inGameAgents[curAgentName];
                 this.agentsUpdate();
             }
         });
+    }
 
-        socket.on('chat-message', (agentName, json) => {
-            if (!this.inGameAgents[agentName]) {
-                console.warn(`Agent ${agentName} tried to send a message but is not logged in`);
-                return;
-            }
-            console.log(`${curAgentName} sending message to ${agentName}: ${json.message}`);
-            this.inGameAgents[agentName].emit('chat-message', curAgentName, json);
-        });
-
+    handleConnection(socket) {
         socket.on('restart-agent', (agentName) => {
             console.log(`Restarting agent: ${agentName}`);
-            this.inGameAgents[agentName].emit('restart-agent');
+            eventBus.emit(agentName + ':restart-agent');
         });
 
         socket.on('stop-agent', (agentName) => {
-            let manager = this.agentManagers[agentName];
-            if (manager) {
-                manager.emit('stop-agent', agentName);
+            if (registeredAgents.has(agentName)) {
+                eventBus.emit(agentName + ':stop-agent', agentName);
             }
             else {
                 console.warn(`Stopping unregisterd agent ${agentName}`);
@@ -75,9 +63,8 @@ export class AgentManager {
         });
 
         socket.on('start-agent', (agentName) => {
-            let manager = this.agentManagers[agentName];
-            if (manager) {
-                manager.emit('start-agent', agentName);
+            if (this.registeredAgents.has(agentName)) {
+                eventBus.emit('start-agent', agentName);
             }
             else {
                 console.warn(`Starting unregisterd agent ${agentName}`);
@@ -106,7 +93,7 @@ export class AgentManager {
             }
             try {
                 console.log(`Sending message to agent ${agentName}: ${message}`);
-                this.inGameAgents[agentName].emit('send-message', agentName, message)
+                eventBus.emit(agentName + ':send-message', agentName, message)
             } catch (error) {
                 console.error('Error: ', error);
             }
@@ -127,8 +114,7 @@ export class AgentManager {
 
     stopAllAgents() {
         for (const agentName in this.inGameAgents) {
-            let manager = this.agentManagers[agentName];
-            if (manager) {
+            if (this.registeredAgents.has(agentName)) {
                 manager.emit('stop-agent', agentName);
             }
         }

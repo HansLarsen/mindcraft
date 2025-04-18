@@ -9,24 +9,24 @@ import { ActionManager } from './action_manager.js';
 import { NPCContoller } from './npc/controller.js';
 import { MemoryBank } from './memory_bank.js';
 import { SelfPrompter } from './self_prompter.js';
-import convoManager from './conversation.js';
+import { ConversationManager } from './conversation.js';
 import { handleTranslation, handleEnglishTranslation } from '../utils/translator.js';
 import { addBrowserViewer } from './vision/browser_viewer.js';
 import settings from '../../settings.js';
-import { serverProxy } from './agent_proxy.js';
+import { AgentServerProxy } from './agent_proxy.js';
 import { Task } from './tasks.js';
 import { say } from './speak.js';
 
 export class Agent {
-    async start(profile_fp, load_mem=false, init_message=null, count_id=0, task_path=null, task_id=null) {
+    async start(profile_fp, load_mem = false, init_message = null, count_id = 0, task_path = null, task_id = null) {
         this.last_sender = null;
         this.count_id = count_id;
         if (!profile_fp) {
             throw new Error('No profile filepath provided');
         }
-        
+
         console.log('Starting agent initialization with profile:', profile_fp);
-        
+
         // Initialize components with more detailed error handling
         console.log('Initializing action manager...');
         this.actions = new ActionManager(this);
@@ -43,15 +43,19 @@ export class Agent {
         this.memory_bank = new MemoryBank();
         console.log('Initializing self prompter...');
         this.self_prompter = new SelfPrompter(this);
-        convoManager.initAgent(this);            
+        console.log('Initilizing convomanager');
+        this.convoManager = new ConversationManager();
+        this.convoManager.initAgent(this);
         console.log('Initializing examples...');
         await this.prompter.initExamples();
         console.log('Initializing task...');
         this.task = new Task(this, task_path, task_id);
         const blocked_actions = settings.blocked_actions.concat(this.task.blocked_actions || []);
         blacklistCommands(blocked_actions);
+        console.log('Initializing eventBus...');
+        this.serverProxy = new AgentServerProxy();
 
-        serverProxy.connect(this);
+        this.serverProxy.connect(this);
 
         console.log(this.name, 'logging into minecraft...');
         this.bot = initBot(this.name);
@@ -66,8 +70,8 @@ export class Agent {
         this.bot.on('login', () => {
             console.log(this.name, 'logged in!');
 
-            serverProxy.login();
-            
+            this.serverProxy.login();
+
             // Set skin for profile, requires Fabric Tailor. (https://modrinth.com/mod/fabrictailor)
             if (this.prompter.profile.skin)
                 this.bot.chat(`/skin set URL ${this.prompter.profile.skin.model} ${this.prompter.profile.skin.path}`);
@@ -85,7 +89,7 @@ export class Agent {
 
                 // wait for a bit so stats are not undefined
                 await new Promise((resolve) => setTimeout(resolve, 1000));
-                
+
                 console.log(`${this.name} spawned.`);
                 this.clearBotLogs();
 
@@ -115,7 +119,7 @@ export class Agent {
             "Set the weather to",
             "Gamerule "
         ];
-        
+
         const respondFunc = async (username, message) => {
             if (username === this.name) return;
             if (settings.only_chat_with.length > 0 && !settings.only_chat_with.includes(username)) return;
@@ -126,7 +130,7 @@ export class Agent {
 
                 console.log(this.name, 'received message from', username, ':', message);
 
-                if (convoManager.isOtherAgent(username)) {
+                if (this.convoManager.isOtherAgent(username)) {
                     console.warn('received whisper from other bot??')
                 }
                 else {
@@ -137,8 +141,8 @@ export class Agent {
                 console.error('Error handling message:', error);
             }
         }
-		
-		this.respondFunc = respondFunc
+
+        this.respondFunc = respondFunc
 
         this.bot.on('whisper', respondFunc);
         if (settings.profiles.length === 1)
@@ -159,19 +163,19 @@ export class Agent {
         }
         if (save_data?.last_sender) {
             this.last_sender = save_data.last_sender;
-            if (convoManager.otherAgentInGame(this.last_sender)) {
+            if (this.convoManager.otherAgentInGame(this.last_sender)) {
                 const msg_package = {
                     message: `You have restarted and this message is auto-generated. Continue the conversation with me.`,
                     start: true
                 };
-                convoManager.receiveFromBot(this.last_sender, msg_package);
+                this.convoManager.receiveFromBot(this.last_sender, msg_package);
             }
         }
         else if (init_message) {
             await this.handleMessage('system', init_message, 2);
         }
         else {
-            this.openChat("Hello world! I am "+this.name);
+            this.openChat("Hello world! I am " + this.name);
         }
     }
 
@@ -193,10 +197,10 @@ export class Agent {
         if (this.self_prompter.isActive()) {
             this.self_prompter.stop(false);
         }
-        convoManager.endAllConversations();
+        this.convoManager.endAllConversations();
     }
 
-    async handleMessage(source, message, max_responses=null) {
+    async handleMessage(source, message, max_responses = null) {
         if (!source || !message) {
             console.warn('Received empty message from', source);
             return false;
@@ -211,7 +215,7 @@ export class Agent {
         }
 
         const self_prompt = source === 'system' || source === this.name;
-        const from_other_bot = convoManager.isOtherAgent(source);
+        const from_other_bot = this.convoManager.isOtherAgent(source);
 
         if (!self_prompt && !from_other_bot) { // from user, check for forced commands
             const user_command_name = containsCommand(message);
@@ -227,7 +231,7 @@ export class Agent {
                     this.history.add(source, message);
                 }
                 let execute_res = await executeCommand(this, message);
-                if (execute_res) 
+                if (execute_res)
                     this.routeResponse(source, execute_res);
                 return true;
             }
@@ -240,8 +244,8 @@ export class Agent {
         message = await handleEnglishTranslation(message);
         console.log('received message from', source, ':', message);
 
-        const checkInterrupt = () => this.self_prompter.shouldInterrupt(self_prompt) || this.shut_up || convoManager.responseScheduledFor(source);
-        
+        const checkInterrupt = () => this.self_prompter.shouldInterrupt(self_prompt) || this.shut_up || this.convoManager.responseScheduledFor(source);
+
         let behavior_log = this.bot.modes.flushBehaviorLog().trim();
         if (behavior_log.length > 0) {
             const MAX_LOG = 500;
@@ -258,14 +262,14 @@ export class Agent {
 
         if (!self_prompt && this.self_prompter.isActive()) // message is from user during self-prompting
             max_responses = 1; // force only respond to this message, then let self-prompting take over
-        for (let i=0; i<max_responses; i++) {
+        for (let i = 0; i < max_responses; i++) {
             if (checkInterrupt()) break;
             let history = this.history.getHistory();
             let res = await this.prompter.promptConvo(history);
 
             console.log(`${this.name} full response to ${source}: ""${res}""`);
-            
-            if (res.trim().length === 0) { 
+
+            if (res.trim().length === 0) {
                 console.warn('no response')
                 break; // empty response ends loop
             }
@@ -275,7 +279,7 @@ export class Agent {
             if (command_name) { // contains query or command
                 res = truncCommandMessage(res); // everything after the command is ignored
                 this.history.add(this.name, res);
-                
+
                 if (!commandExists(command_name)) {
                     this.history.add('system', `Command ${command_name} does not exist.`);
                     console.warn('Agent hallucinated command:', command_name)
@@ -311,7 +315,7 @@ export class Agent {
                 this.routeResponse(source, res);
                 break;
             }
-            
+
             this.history.save();
         }
 
@@ -327,9 +331,9 @@ export class Agent {
             to_player = this.last_sender;
         }
 
-        if (convoManager.isOtherAgent(to_player) && convoManager.inConversation(to_player)) {
+        if (this.convoManager.isOtherAgent(to_player) && this.convoManager.inConversation(to_player)) {
             // if we're in an ongoing conversation with the other bot, send the response to it
-            convoManager.sendToBot(to_player, message);
+            this.convoManager.sendToBot(to_player, message);
         }
         else {
             // otherwise, use open chat
@@ -357,9 +361,9 @@ export class Agent {
             }
         }
         else {
-	    if (settings.speak) {
-            say(to_translate);
-	    }
+            if (settings.speak) {
+                say(to_translate);
+            }
             this.bot.chat(message);
         }
     }
@@ -368,13 +372,13 @@ export class Agent {
         // Custom events
         this.bot.on('time', () => {
             if (this.bot.time.timeOfDay == 0)
-            this.bot.emit('sunrise');
+                this.bot.emit('sunrise');
             else if (this.bot.time.timeOfDay == 6000)
-            this.bot.emit('noon');
+                this.bot.emit('noon');
             else if (this.bot.time.timeOfDay == 12000)
-            this.bot.emit('sunset');
+                this.bot.emit('sunset');
             else if (this.bot.time.timeOfDay == 18000)
-            this.bot.emit('midnight');
+                this.bot.emit('midnight');
         });
 
         let prev_health = this.bot.health;
@@ -388,7 +392,7 @@ export class Agent {
             prev_health = this.bot.health;
         });
         // Logging callbacks
-        this.bot.on('error' , (err) => {
+        this.bot.on('error', (err) => {
             console.error('Error event!', err);
         });
         this.bot.on('end', (reason) => {
@@ -461,15 +465,15 @@ export class Agent {
     isIdle() {
         return !this.actions.executing;
     }
-    
-    cleanKill(msg='Killing agent process...', code=1) {
+
+    cleanKill(msg = 'Killing agent process...', code = 1) {
         this.history.add('system', msg);
-        this.bot.chat(code > 1 ? 'Restarting.': 'Exiting.');
+        this.bot.chat(code > 1 ? 'Restarting.' : 'Exiting.');
         this.history.save();
         process.exit(code);
     }
 
     killAll() {
-        serverProxy.shutdown();
+        this.serverProxy.shutdown();
     }
 }

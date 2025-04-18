@@ -22,7 +22,7 @@ export function createMindServer(port = 8080) {
 
     // Get directory name
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
-    
+
     app.use(expressLayouts);
     app.set('layout', 'layout'); // Specify your default layout
     // Configure view engine
@@ -38,21 +38,21 @@ export function createMindServer(port = 8080) {
             currentPage: 'dashboard'
         });
     });
-    
+
     app.get('/agents', (req, res) => {
         res.render('agents', {
             title: 'Mindcraft Agents',
             currentPage: 'agents'
         });
     });
-    
+
     app.get('/logs', (req, res) => {
         res.render('logs', {
             title: 'Mindcraft Logs',
             currentPage: 'logs'
         });
     });
-    
+
     app.get('/settings', (req, res) => {
         res.render('settings', {
             title: 'Mindcraft Settings',

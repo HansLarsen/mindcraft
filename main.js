@@ -1,19 +1,21 @@
-import { AgentProcess } from './src/process/agent_process.js';
 import settings from './settings.js';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { createMindServer } from './src/server/mind_server.js';
 import { mainProxy } from './src/process/main_proxy.js';
-import { readFileSync } from 'fs';
-
 import segfaultHandler from 'segfault-handler';
+import { AgentManager } from './src/process/agent_manager.js';
+
+// Initialize crash handler
 segfaultHandler.registerHandler('crash.log');
+
 
 function parseArguments() {
     return yargs(hideBin(process.argv))
         .option('profiles', {
             type: 'array',
             describe: 'List of agent profile paths',
+            default: settings.profiles
         })
         .option('task_path', {
             type: 'string',
@@ -28,34 +30,40 @@ function parseArguments() {
         .parse();
 }
 
-function getProfiles(args) {
-    return args.profiles || settings.profiles;
-}
-
-async function main() {
-    if (settings.host_mindserver) {
+async function run() {
+    try {
+        const args = parseArguments();
         const mindServer = createMindServer(settings.mindserver_port);
-    }
-    mainProxy.connect();
+        const agentManager = new AgentManager();
 
-    const args = parseArguments();
-    const profiles = getProfiles(args);
-    console.log(profiles);
-    const { load_memory, init_message } = settings;
+        // Initialize main proxy connection
+        await mainProxy.connect();
 
-    for (let i=0; i<profiles.length; i++) {
-        const agent_process = new AgentProcess();
-        const profile = readFileSync(profiles[i], 'utf8');
-        const agent_json = JSON.parse(profile);
-        agent_process.start(profiles[i], load_memory, init_message, i, args.task_path, args.task_id);
-        mainProxy.registerAgent(agent_json.name, agent_process);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Create and initialize agents
+        await agentManager.initializeAgents(args.profiles, {
+            load_memory: settings.load_memory,
+            init_message: settings.init_message,
+            task_path: args.task_path,
+            task_id: args.task_id
+        });
+
+        // Handle shutdown gracefully
+        process.on('SIGINT', () => {
+            console.log('\nShutting down agents...');
+            agentManager.shutdown();
+            process.exit(0);
+        });
+
+        process.on('SIGTERM', () => {
+            agentManager.shutdown();
+            process.exit(0);
+        });
+
+    } catch (error) {
+        console.error('Application failed:', error);
+        process.exit(1);
     }
 }
 
-try {
-    main();
-} catch (error) {
-    console.error('An error occurred:', error);
-    process.exit(1);
-}
+// Start the application
+run();
