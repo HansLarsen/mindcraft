@@ -1,3 +1,5 @@
+import { eventBus } from "./event_bus.js";
+
 export class AgentManager {
     constructor(io) {
         this.registeredAgents = new Set();
@@ -5,23 +7,83 @@ export class AgentManager {
         this.inGameAgents = {};
         this.agentManagers = {};
         this.io = io;
+
+        this.io.on('connection', (socket) => {
+            this.handleConnection(socket)
+        })
+
+        eventBus.on('register-agents', (agentNames) => {
+            console.log(`Registering agents: ${agentNames.name}`);
+            agentNames.forEach(agent => this.registeredAgents.add(agent.name));
+            agentNames.forEach(agent => this.registeredAgentsPort[agent.name] = agent.index);
+            eventBus.emit('register-agents-success');
+            this.agentsUpdate();
+        });
+
+        eventBus.on('restart-agent', (agentName) => {
+            console.log(`Restarting agent: ${agentName}`);
+            this.inGameAgents[agentName].emit('restart-agent');
+        });
+
+        eventBus.on('stop-agent', (agentName) => {
+            let manager = this.agentManagers[agentName];
+            if (manager) {
+                manager.emit('stop-agent', agentName);
+            }
+            else {
+                console.warn(`Stopping unregisterd agent ${agentName}`);
+            }
+        });
+
+        eventBus.on('start-agent', (agentName) => {
+            let manager = this.agentManagers[agentName];
+            if (manager) {
+                manager.emit('start-agent', agentName);
+            }
+            else {
+                console.warn(`Starting unregisterd agent ${agentName}`);
+            }
+        });
+
+        eventBus.on('stop-all-agents', () => {
+            console.log('Killing all agents');
+            this.stopAllAgents();
+        });
+
+        eventBus.on('shutdown', () => {
+            console.log('Shutting down');
+            for (let manager of Object.values(this.agentManagers)) {
+                manager.emit('shutdown');
+            }
+            setTimeout(() => {
+                process.exit(0);
+            }, 2000);
+        });
+
+        eventBus.on('send-message', (agentName, message) => {
+            if (!this.inGameAgents[agentName]) {
+                console.warn(`Agent ${agentName} not logged in, cannot send message via MindServer.`);
+                return
+            }
+            try {
+                console.log(`Sending message to socket agent ${agentName}: ${message}`);
+                eventBus.emit('send-message', agentName, message)
+            } catch (error) {
+                console.error('Error: ', error);
+            }
+        });
+
+        eventBus.on('webclient-connected', () => {
+            this.agentsUpdate();
+        });
     }
 
     handleConnection(socket) {
         let curAgentName = null;
 
-        socket.on('register-agents', (agentNames) => {
-            console.log(`Registering agents: ${agentNames.name}`);
-            agentNames.forEach(agent => this.registeredAgents.add(agent.name));
-            agentNames.forEach(agent => this.registeredAgentsPort[agent.name] = agent.index);
-            for (let agent of agentNames) {
-                this.agentManagers[agent.name] = socket;
-            }
-            socket.emit('register-agents-success');
-            this.agentsUpdate();
-        });
-
         socket.on('login-agent', (agentName) => {
+            this.agentManagers[agentName] = socket;
+
             if (curAgentName && curAgentName !== agentName) {
                 console.warn(`Agent ${agentName} already logged in as ${curAgentName}`);
                 return;
@@ -59,46 +121,6 @@ export class AgentManager {
             this.inGameAgents[agentName].emit('chat-message', curAgentName, json);
         });
 
-        socket.on('restart-agent', (agentName) => {
-            console.log(`Restarting agent: ${agentName}`);
-            this.inGameAgents[agentName].emit('restart-agent');
-        });
-
-        socket.on('stop-agent', (agentName) => {
-            let manager = this.agentManagers[agentName];
-            if (manager) {
-                manager.emit('stop-agent', agentName);
-            }
-            else {
-                console.warn(`Stopping unregisterd agent ${agentName}`);
-            }
-        });
-
-        socket.on('start-agent', (agentName) => {
-            let manager = this.agentManagers[agentName];
-            if (manager) {
-                manager.emit('start-agent', agentName);
-            }
-            else {
-                console.warn(`Starting unregisterd agent ${agentName}`);
-            }
-        });
-
-        socket.on('stop-all-agents', () => {
-            console.log('Killing all agents');
-            stopAllAgents();
-        });
-
-        socket.on('shutdown', () => {
-            console.log('Shutting down');
-            for (let manager of Object.values(this.agentManagers)) {
-                manager.emit('shutdown');
-            }
-            setTimeout(() => {
-                process.exit(0);
-            }, 2000);
-        });
-
         socket.on('send-message', (agentName, message) => {
             if (!this.inGameAgents[agentName]) {
                 console.warn(`Agent ${agentName} not logged in, cannot send message via MindServer.`);
@@ -111,18 +133,16 @@ export class AgentManager {
                 console.error('Error: ', error);
             }
         });
-        this.agentsUpdate(socket);
+
+        this.agentsUpdate();
     }
 
-    agentsUpdate(socket) {
-        if (!socket) {
-            socket = this.io;
-        }
+    agentsUpdate() {
         let agents = [];
         this.registeredAgents.forEach(name => {
             agents.push({ name, in_game: !!this.inGameAgents[name], port: 3000 + this.registeredAgentsPort[name] });
         });
-        socket.emit('agents-update', agents);
+        eventBus.emit('agents-update', agents);
     }
 
     stopAllAgents() {

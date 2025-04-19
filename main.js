@@ -33,9 +33,8 @@ function getProfiles(args) {
 }
 
 async function main() {
-    if (settings.host_mindserver) {
-        const mindServer = createMindServer(settings.mindserver_port);
-    }
+    const servers = createMindServer(settings.mindserver_port);
+
     mainProxy.connect();
 
     const args = parseArguments();
@@ -43,7 +42,7 @@ async function main() {
     console.log(profiles);
     const { load_memory, init_message } = settings;
 
-    for (let i=0; i<profiles.length; i++) {
+    for (let i = 0; i < profiles.length; i++) {
         const agent_process = new AgentProcess();
         const profile = readFileSync(profiles[i], 'utf8');
         const agent_json = JSON.parse(profile);

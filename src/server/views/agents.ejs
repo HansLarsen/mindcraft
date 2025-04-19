@@ -1,4 +1,11 @@
-<h2>Agents</h2>
-<div id="agents">
+<div id="agents-container">
+    <div class="global-controls">
+        <button class="refresh-btn" onclick="updateAgents()">
+            <i class="fas fa-sync-alt"></i> Refresh Agents
+        </button>
+        <button class="stop-btn" onclick="killAllAgents()">Stop All</button>
+        <button class="stop-btn" onclick="shutdown()">Shutdown</button>
+    </div>
+    <div id="agents-list"></div>
     <script src="/js/app.js"></script>
 </div>

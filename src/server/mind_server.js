@@ -4,96 +4,75 @@ import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import expressLayouts from 'express-ejs-layouts';
+import { WebManager } from './web_manager.js';
 import { AgentManager } from './agent_manager.js';
 import { WorldManager } from './world_manager.js';
 
 // Module-level variables
-let io;
-let server;
+let webIO;
+let agentIO;
+let webServer;
+let agentServer;
 
-// Initialize the server
-export function createMindServer(port = 8080) {
-    const app = express();
-    server = http.createServer(app);
-    io = new Server(server);
+export function createMindServer(webPort = 8080) {
+    // Create separate HTTP servers
+    const webApp = express();
+    webServer = http.createServer(webApp);
 
-    const agentManager = new AgentManager(io);
-    const worldManager = new WorldManager(io);
+    // Create separate Socket.IO instances
+    webIO = new Server(webServer);
+    agentIO = webIO.of('/agentsocket');
 
-    // Get directory name
-    const __dirname = path.dirname(fileURLToPath(import.meta.url));
-    
-    app.use(expressLayouts);
-    app.set('layout', 'layout'); // Specify your default layout
-    // Configure view engine
-    app.set('views', path.join(__dirname, 'views'));
-    app.set('view engine', 'ejs');
+    // Initialize managers with appropriate IO instances
+    const webmanager = new WebManager(webIO);
+    const agentManager = new AgentManager(agentIO);
 
-    // Serve static files
-    app.use(express.static(path.join(__dirname, 'public')));
+    // Configure web server
+    configureWebServer(webApp);
 
-    app.get('/', (req, res) => {
-        res.render('dashboard', {
-            title: 'Mindcraft Control Panel',
-            currentPage: 'dashboard'
-        });
-    });
-    
-    app.get('/agents', (req, res) => {
-        res.render('agents', {
-            title: 'Mindcraft Agents',
-            currentPage: 'agents'
-        });
-    });
-    
-    app.get('/logs', (req, res) => {
-        res.render('logs', {
-            title: 'Mindcraft Logs',
-            currentPage: 'logs'
-        });
-    });
-    
-    app.get('/settings', (req, res) => {
-        res.render('settings', {
-            title: 'Mindcraft Settings',
-            currentPage: 'settings'
-        });
+    // Start servers
+    webServer.listen(webPort, 'localhost', () => {
+        console.log(`Web server running on port ${webPort}`);
     });
 
-    app.get('/world', (req, res) => {
-        res.render('world', {
-            title: 'Mindcraft world',
-            currentPage: 'world'
-        });
-    });
-
-    app.get('/agents/:name/view', (req, res) => {
-        res.render('agent-viewer', {
-            title: `${req.params.name} Viewer`,
-            currentPage: 'agents',
-            agentName: req.params.name,
-            agentPort: 3000 // Implement this function
-        });
-    });
-
-    // Socket.io connection handling
-    io.on('connection', (socket) => {
-        let curAgentName = null;
-        console.log('Client connected');
-        agentManager.handleConnection(socket);
-        worldManager.handleConnection(socket);
-    });
-
-    server.listen(port, 'localhost', () => {
-        console.log(`MindServer running on port ${port}`);
-    });
-
-    return server;
+    return { webServer, agentServer };
 }
 
+function configureWebServer(app) {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+    // Web server configuration
+    app.use(expressLayouts);
+    app.set('layout', 'layout');
+    app.set('views', path.join(__dirname, 'views'));
+    app.set('view engine', 'ejs');
+    app.use(express.static(path.join(__dirname, 'public')));
 
-// Optional: export these if you need access to them from other files
-export const getIO = () => io;
-export const getServer = () => server;
-export const getConnectedAgents = () => connectedAgents; 
+    // Web routes
+    app.get('/', (req, res) => res.render('dashboard', { title: 'Control Panel', currentPage: 'dashboard' }));
+    app.get('/agents', (req, res) => res.render('agents', { title: 'Agents', currentPage: 'agents' }));
+    app.get('/logs', (req, res) => res.render('logs', { title: 'Logs', currentPage: 'logs' }));
+    app.get('/settings', (req, res) => res.render('settings', { title: 'Settings', currentPage: 'settings' }));
+    app.get('/world', (req, res) => res.render('world', { title: 'World', currentPage: 'world' }));
+    app.get('/agents/:name/view', handleAgentView);
+
+    // Web socket connections
+    webIO.on('connection', (socket) => {
+        console.log('Web client connected');
+        // Add web-specific socket handlers here
+    });
+}
+
+function handleAgentView(req, res) {
+    res.render('agent-viewer', {
+        title: `${req.params.name} Viewer`,
+        agentName: req.params.name,
+        agentPort: 3000
+    });
+}
+
+// Export getters for specific servers
+export const getWebIO = () => webIO;
+export const getAgentIO = () => agentIO;
+export const getWebServer = () => webServer;
+export const getAgentServer = () => agentServer;

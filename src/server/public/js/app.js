@@ -1,12 +1,13 @@
 const socket = io();
-const agentsDiv = document.getElementById('agents');
+const agentsList = document.getElementById('agents-list'); // Changed from agentsDiv
 const registeredAgentsPort = {};
 
 socket.on('agents-update', (agents) => {
     agents.forEach(agent => {
         registeredAgentsPort[agent.name] = agent.port;
     });
-    agentsDiv.innerHTML = agents.length ? 
+
+    agentsList.innerHTML = agents.length ?
         agents.map(agent => `
             <div class="agent-card">
                 <div class="agent-header">
@@ -43,13 +44,17 @@ socket.on('agents-update', (agents) => {
                             loading="lazy"></iframe>
                 </div>
             </div>
-        `).join('') + 
-        `<div class="global-controls">
-            <button class="stop-btn" onclick="killAllAgents()">Stop All</button>
-            <button class="stop-btn" onclick="shutdown()">Shutdown</button>
-        </div>` :
+        `).join('') :
         '<div class="agent">No agents connected</div>';
 });
+
+function updateAgents() {
+    const refreshBtn = document.querySelector('.refresh-btn');
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    socket.emit('update-agents', () => {
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Agents';
+    });
+}
 
 function restartAgent(agentName) {
     socket.emit('restart-agent', agentName);
@@ -91,3 +96,7 @@ function getPortForAgent(agentName) {
     const agentport = parseInt(getAgentPort(agentName.replace('agent-', '')));
     return agentport;
 }
+
+socket.on('connect', (agents) => {
+    updateAgents()
+});

@@ -4,11 +4,12 @@ body {
     background: #1a1a1a;
     color: #e0e0e0;
 }
+
 #agents {
     background: #2d2d2d;
     padding: 5px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 h1 {
@@ -25,7 +26,9 @@ h1 {
     align-items: center;
 }
 
-.restart-btn, .start-btn, .stop-btn {
+.restart-btn,
+.start-btn,
+.stop-btn {
     color: white;
     border: none;
     padding: 5px 10px;
@@ -33,25 +36,40 @@ h1 {
     cursor: pointer;
     margin-left: 5px;
 }
+
 .restart-btn {
     background: #4CAF50;
 }
+
 .start-btn {
     background: #2196F3;
 }
+
 .stop-btn {
     background: #f44336;
 }
-.restart-btn:hover { background: #45a049; }
-.start-btn:hover { background: #1976D2; }
-.stop-btn:hover { background: #d32f2f; }
+
+.restart-btn:hover {
+    background: #45a049;
+}
+
+.start-btn:hover {
+    background: #1976D2;
+}
+
+.stop-btn:hover {
+    background: #d32f2f;
+}
+
 .status-icon {
     font-size: 12px;
     margin-right: 8px;
 }
+
 .status-icon.online {
     color: #4CAF50;
 }
+
 .status-icon.offline {
     color: #f44336;
 }
@@ -144,7 +162,7 @@ h1 {
 
 .agent-card {
     background: #2d2d2d;
-    border-radius: 1px;
+    border-radius: 2px;
     margin-bottom: 2px;
     padding: 2px;
 }
@@ -153,7 +171,8 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2px;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
 }
 
 .agent-controls {
@@ -172,7 +191,8 @@ h1 {
 
 .agent-viewer-frame {
     width: 100%;
-    height: 300px; /* Fixed height or use min-height */
+    height: 300px;
+    /* Fixed height or use min-height */
     border: none;
     background: #000;
 }
@@ -216,7 +236,47 @@ h1 {
 }
 
 .global-controls {
-    margin-top: 20px;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+    background: rgba(90, 87, 87, 0.9);
+    backdrop-filter: blur(5px);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     display: flex;
     gap: 10px;
+}
+
+.refresh-btn {
+    background: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.refresh-btn:hover {
+    background: #45a049;
+}
+
+.refresh-btn i {
+    margin-right: 5px;
+}
+
+#agents-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#agents-list {
+    display: grid;
+    gap: 5px;
+}
+
+main {
+    margin-top: 10px;
+    /* Adjust this value to control the spacing */
 }

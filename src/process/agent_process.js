@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { mainProxy } from './main_proxy.js';
 
 export class AgentProcess {
-    start(profile, load_memory=false, init_message=null, count_id=0, task_path=null, task_id=null) {
+    start(profile, load_memory = false, init_message = null, count_id = 0, task_path = null, task_id = null) {
         this.profile = profile;
         this.count_id = count_id;
         this.running = true;
@@ -23,13 +23,13 @@ export class AgentProcess {
             stdio: 'inherit',
             stderr: 'inherit',
         });
-        
+
         let last_restart = Date.now();
         agentProcess.on('exit', (code, signal) => {
             console.log(`Agent process exited with code ${code} and signal ${signal}`);
             this.running = false;
             mainProxy.logoutAgent(this.name);
-            
+
             if (code > 1) {
                 console.log(`Ending task`);
                 process.exit(code);
@@ -46,7 +46,7 @@ export class AgentProcess {
                 last_restart = Date.now();
             }
         });
-    
+
         agentProcess.on('error', (err) => {
             console.error('Agent process error:', err);
         });
