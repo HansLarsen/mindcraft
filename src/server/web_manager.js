@@ -15,6 +15,14 @@ export class WebManager {
         eventBus.on("agents-update", (agents) => {
             this.agentsUpdate(agents);
         });
+
+        eventBus.on('log-update', (logs) => {
+            this.logsUpdate(logs);
+        })
+
+        eventBus.on('log-update-partial', (update) => {
+            this.logsUpdatePartial(update);
+        })
     }
 
     handleConnection(socket) {
@@ -49,6 +57,10 @@ export class WebManager {
             callback()
         });
 
+        socket.on('update-log', () => {
+            eventBus.emit('update-log')
+        })
+
         eventBus.emit('webclient-connected')
         this.sockets.push(socket)
     }
@@ -58,6 +70,32 @@ export class WebManager {
             if (socket) {
                 if (socket.connected) {
                     socket.emit('agents-update', agents);
+                }
+            } else {
+                let index = this.sockets.find(socket);
+                this.sockets.pop(index);
+            }
+        })
+    }
+
+    logsUpdate(logs) {
+        this.sockets.forEach((socket) => {
+            if (socket) {
+                if (socket.connected) {
+                    socket.emit('log-update', logs);
+                }
+            } else {
+                let index = this.sockets.find(socket);
+                this.sockets.pop(index);
+            }
+        })
+    }
+
+    logsUpdatePartial(logs) {
+        this.sockets.forEach((socket) => {
+            if (socket) {
+                if (socket.connected) {
+                    socket.emit('update-log-partial', logs);
                 }
             } else {
                 let index = this.sockets.find(socket);

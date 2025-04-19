@@ -7,6 +7,7 @@ import expressLayouts from 'express-ejs-layouts';
 import { WebManager } from './web_manager.js';
 import { AgentManager } from './agent_manager.js';
 import { WorldManager } from './world_manager.js';
+import { LogManager } from './logger.js';
 
 // Module-level variables
 let webIO;
@@ -26,6 +27,7 @@ export function createMindServer(webPort = 8080) {
     // Initialize managers with appropriate IO instances
     const webmanager = new WebManager(webIO);
     const agentManager = new AgentManager(agentIO);
+    const logManager = new LogManager();
 
     // Configure web server
     configureWebServer(webApp);

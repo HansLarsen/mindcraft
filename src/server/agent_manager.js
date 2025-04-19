@@ -67,7 +67,7 @@ export class AgentManager {
             }
             try {
                 console.log(`Sending message to socket agent ${agentName}: ${message}`);
-                eventBus.emit('send-message', agentName, message)
+                this.inGameAgents[agentName].emit('send-message', agentName, message)
             } catch (error) {
                 console.error('Error: ', error);
             }
@@ -132,6 +132,10 @@ export class AgentManager {
             } catch (error) {
                 console.error('Error: ', error);
             }
+        });
+
+        socket.on('log', (message) => {
+            eventBus.emit('log', { name: message.name, log: message.message, timestamp: message.timestamp })
         });
 
         this.agentsUpdate();

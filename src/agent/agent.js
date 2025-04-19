@@ -25,14 +25,16 @@ export class Agent {
             throw new Error('No profile filepath provided');
         }
 
+        console.log('Initializing prompter...');
+        this.prompter = new Prompter(this, profile_fp);
+        this.name = this.prompter.getName();
+        serverProxy.connect(this);
+
         console.log('Starting agent initialization with profile:', profile_fp);
 
         // Initialize components with more detailed error handling
         console.log('Initializing action manager...');
         this.actions = new ActionManager(this);
-        console.log('Initializing prompter...');
-        this.prompter = new Prompter(this, profile_fp);
-        this.name = this.prompter.getName();
         console.log('Initializing history...');
         this.history = new History(this);
         console.log('Initializing coder...');
@@ -50,8 +52,6 @@ export class Agent {
         this.task = new Task(this, task_path, task_id);
         const blocked_actions = settings.blocked_actions.concat(this.task.blocked_actions || []);
         blacklistCommands(blocked_actions);
-
-        serverProxy.connect(this);
 
         console.log(this.name, 'logging into minecraft...');
         this.bot = initBot(this.name);

@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 import convoManager from './conversation.js';
 import settings from '../../settings.js';
+import { getTimestamp } from '../utils/time.js';
 
 class AgentServerProxy {
     constructor() {
@@ -67,8 +68,38 @@ class AgentServerProxy {
     sendBotChatToServer(agentName, json) {
         this.socket.emit('chat-message', agentName, json);
     }
+
+    sendChunkData(chunkData) {
+        this.socket.emit('chunk-data', chunkData)
+    }
+
+    sendLog(message) {
+        if (this.socket) {
+            let message_str = String(message);
+            if (message_str.length > 150) {
+                message_str = message_str.substring(0, 150);
+            }
+            this.socket.emit('log', { name: this.agent.name, timestamp: getTimestamp(), message: message_str })
+        }
+    }
 }
 
 // Create and export a singleton instance
 export const serverProxy = new AgentServerProxy();
 
+(function () {
+    const originalLog = console.log;
+
+    console.log = function (message) {
+        try {
+            serverProxy.sendLog(message);
+        } catch (err) {
+            if (err.code === 'EPIPE') {
+                console.error('Pipe broken, stopping log writes');
+            } else {
+                throw err; // Propagate other errors
+            }
+        }
+        originalLog.apply(console, arguments);
+    };
+})();

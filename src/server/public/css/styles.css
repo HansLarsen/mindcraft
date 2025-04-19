@@ -280,3 +280,74 @@ main {
     margin-top: 10px;
     /* Adjust this value to control the spacing */
 }
+
+#logControls {
+    margin: 1rem 0;
+    padding: 10px;
+    background: #2d2d2d;
+    border-radius: 4px;
+}
+
+#searchBox {
+    padding: 2px;
+    width: 200px;
+    background: #363636;
+    border: 1px solid #444;
+    color: white;
+    border-radius: 2px;
+}
+
+#agentFilter {
+    margin-top: 10px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.agent-log {
+    margin-bottom: 1rem;
+    background: #2d2d2d;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.agent-header {
+    padding: 10px;
+    background: #363636;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.log-entries {
+    padding: 10px;
+    display: block;
+}
+
+.log-entry {
+    padding: 5px 0;
+    font-family: monospace;
+    font-size: 0.9em;
+    border-bottom: 1px solid #444;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.timestamp {
+    color: #4CAF50;
+    margin-right: 10px;
+}
+
+.message {
+    color: #e0e0e0;
+}
+
+.toggle {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
