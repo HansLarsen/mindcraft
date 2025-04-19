@@ -7,7 +7,7 @@ class AgentServerProxy {
         if (AgentServerProxy.instance) {
             return AgentServerProxy.instance;
         }
-        
+
         this.socket = null;
         this.connected = false;
         AgentServerProxy.instance = this;
@@ -15,7 +15,7 @@ class AgentServerProxy {
 
     connect(agent) {
         if (this.connected) return;
-        
+
         this.agent = agent;
 
         this.socket = io(`http://${settings.mindserver_host}:${settings.mindserver_port}`);
@@ -42,14 +42,14 @@ class AgentServerProxy {
             console.log(`Restarting agent: ${agentName}`);
             this.agent.cleanKill();
         });
-		
-		this.socket.on('send-message', (agentName, message) => {
-			try {
-				this.agent.respondFunc("NO USERNAME", message);
-			} catch (error) {
-				console.error('Error: ', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-			}
-		});
+
+        this.socket.on('send-message', (agentName, message) => {
+            try {
+                this.agent.respondFunc("NO USERNAME", message);
+            } catch (error) {
+                console.error('Error: ', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+            }
+        });
     }
 
     login() {
@@ -63,11 +63,12 @@ class AgentServerProxy {
     getSocket() {
         return this.socket;
     }
+
+    sendBotChatToServer(agentName, json) {
+        this.socket.emit('chat-message', agentName, json);
+    }
 }
 
 // Create and export a singleton instance
 export const serverProxy = new AgentServerProxy();
 
-export function sendBotChatToServer(agentName, json) {
-    serverProxy.getSocket().emit('chat-message', agentName, json);
-}
