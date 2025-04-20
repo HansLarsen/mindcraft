@@ -138,6 +138,10 @@ export class AgentManager {
             eventBus.emit('log', { name: message.name, log: message.message, timestamp: message.timestamp })
         });
 
+        socket.on('chunk-data', (update) => {
+            eventBus.emit('chunk-data', update);
+        });
+
         this.agentsUpdate();
     }
 

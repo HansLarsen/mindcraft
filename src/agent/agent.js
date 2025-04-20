@@ -16,6 +16,7 @@ import settings from '../../settings.js';
 import { serverProxy } from './agent_proxy.js';
 import { Task } from './tasks.js';
 import { say } from './speak.js';
+import { ChunkManager } from './chunk_update.js';
 
 export class Agent {
     async start(profile_fp, load_mem = false, init_message = null, count_id = 0, task_path = null, task_id = null) {
@@ -55,6 +56,9 @@ export class Agent {
 
         console.log(this.name, 'logging into minecraft...');
         this.bot = initBot(this.name);
+
+        console.log('Starting chunk manager');
+        this.chunkManager = new ChunkManager(this.bot, serverProxy);
 
         initModes(this);
 

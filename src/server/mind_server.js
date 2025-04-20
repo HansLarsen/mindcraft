@@ -28,6 +28,7 @@ export function createMindServer(webPort = 8080) {
     const webmanager = new WebManager(webIO);
     const agentManager = new AgentManager(agentIO);
     const logManager = new LogManager();
+    const worldManager = new WorldManager(webIO);
 
     // Configure web server
     configureWebServer(webApp);

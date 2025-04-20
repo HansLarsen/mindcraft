@@ -19,3 +19,8 @@ RUN npm install -g npm@11.3.0
 
 ENV NVIDIA_DRIVER_CAPABILITIES all
 ENV NVIDIA_VISIBLE_DEVICES all
+
+RUN apt-get update && \
+    apt-get install -y firefox-esr && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*

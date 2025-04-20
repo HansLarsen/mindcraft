@@ -351,3 +351,35 @@ main {
     color: white;
     cursor: pointer;
 }
+
+#viewer-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#viewer-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#mapCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.controls {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    color: white;
+    z-index: 100;
+    border-radius: 4px;
+}
