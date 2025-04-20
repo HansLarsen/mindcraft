@@ -15,7 +15,7 @@ RUN apt install -y python-is-python3 \
     libx11-dev \
     espeak
 
-RUN npm install -g npm@11.3.0
+RUN npm install -g npm@11.3.0 npm-check
 
 ENV NVIDIA_DRIVER_CAPABILITIES all
 ENV NVIDIA_VISIBLE_DEVICES all

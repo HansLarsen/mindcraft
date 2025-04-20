@@ -35,6 +35,8 @@ export function createMindServer(webPort = 8080) {
     // Configure web server
     configureWebServer(webApp);
 
+    worldManager.setupTileRoutes(webApp);
+
     // Start servers
     webServer.listen(webPort, 'localhost', () => {
         console.log(`Web server running on port ${webPort}`);
@@ -59,6 +61,7 @@ function configureWebServer(app) {
     app.get('/logs', (req, res) => res.render('logs', { title: 'Logs', currentPage: 'logs' }));
     app.get('/settings', (req, res) => res.render('settings', { title: 'Settings', currentPage: 'settings' }));
     app.get('/world', (req, res) => res.render('world', { title: 'World', currentPage: 'world' }));
+    app.get('/map', (req, res) => res.render('map', { title: 'Map', currentPage: 'map' }));
     app.get('/agents/:name/view', handleAgentView);
 
     // Web socket connections

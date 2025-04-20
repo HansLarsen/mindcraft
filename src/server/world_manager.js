@@ -1,11 +1,14 @@
 import { eventBus } from "./event_bus.js";
 import zlib from 'zlib';
+import { createCanvas } from 'canvas'; // Requires node-canvas
+import sharp from 'sharp';
 
 export class WorldManager {
     constructor(web_viewer_io) {
         this.io = web_viewer_io;
         this.chunks = new Map(); // Stores chunks as "x,z" keys
         this.sockets = []
+        this.tileCache = new Map(); // Stores rendered PNG buffers
 
         this.io.on('connection', (socket) => {
             this.handleConnection(socket);
@@ -31,6 +34,8 @@ export class WorldManager {
             })
             callback(JSON.stringify(keys));
         });
+
+        this.sendInitialState(socket);
 
         this.sockets.push(socket)
     }
@@ -114,6 +119,18 @@ export class WorldManager {
                 // Merge partial Y-range updates
                 this.mergeChunkData(existing, chunkData);
                 this.chunks.set(chunkKey, existing);
+
+                const tile_chunkKey = `${chunkData.z / 16},${chunkData.x / 16}`;
+                // Render and cache tile
+                const tileBuffer = await this.renderChunkToTile(existing);
+                this.tileCache.set(tile_chunkKey, tileBuffer);
+
+                // Notify clients
+                this.updateChunk({
+                    x: chunkData.z / 16,
+                    z: chunkData.x / 16,
+                    tileUrl: `/tiles/${chunkData.x}/${chunkData.z}.png`
+                });
             }
         } catch (err) {
             console.error('World update error:', err);
@@ -188,16 +205,93 @@ export class WorldManager {
         return colors[blockName] || '#000000';
     }
 
-    updateChunk(chunk) {
-        this.sockets.forEach((socket) => {
-            if (socket) {
-                if (socket.connected) {
-                    socket.emit('chunk-data', chunk);
-                }
+    setupTileRoutes(app) {
+        app.get('/tiles/:x/:z.png', (req, res) => {
+            const { x, z } = req.params;
+            const tile = this.tileCache.get(`${x},${z}`);
+
+            if (tile) {
+                res.set('Content-Type', 'image/png');
+                res.set('Cache-Control', 'public, max-age=604800');
+                res.send(tile);
             } else {
-                let index = this.sockets.find(socket);
-                this.sockets.pop(index);
+                res.status(404).send('Tile not found');
             }
-        })
+        });
+    }
+
+    async renderChunkToTile(chunk) {
+        // Create 256x256 canvas (16px per block)
+        const canvas = createCanvas(256, 256);
+        const ctx = canvas.getContext('2d');
+
+        // Draw biome-based background
+        ctx.fillStyle = this.biomeToColor(chunk.biome[0][0]);
+        ctx.fillRect(0, 0, 256, 256);
+
+        // Draw blocks
+        for (let x = 0; x < 16; x++) {
+            for (let z = 0; z < 16; z++) {
+                const column = chunk.blocks[x][z];
+                const y = this.findTopBlockY(column);
+                const blockName = column[y];
+
+                if (blockName !== 'air') {
+                    ctx.fillStyle = this.blockToColor(blockName);
+                    ctx.fillRect(x * 16, z * 16, 16, 16); // 16px per block
+                }
+            }
+        }
+
+        // Convert to optimized PNG
+        return sharp(canvas.toBuffer())
+            .png({ compressionLevel: 9, adaptiveFiltering: true })
+            .toBuffer();
+    }
+
+    findTopBlockY(column) {
+        for (let y = 255; y >= 0; y--) {
+            if (column[y] !== 'air') return y;
+        }
+        return -1;
+    }
+
+    biomeToColor(biomeId) {
+        const biomeColors = {
+            0: '#88BB67',   // Plains
+            1: '#5A7246',   // Forest
+            4: '#8EB971',   // River
+            12: '#90714D'   // Desert
+        };
+        return biomeColors[biomeId] || '#888888';
+    }
+
+    updateChunk(chunk) {
+        this.sockets.forEach(socket => {
+            if (socket?.connected) {
+                socket.emit('chunk-update', {
+                    x: chunk.x,
+                    z: chunk.z,
+                    url: chunk.tileUrl
+                });
+            }
+        });
+    }
+
+    // Add this new method
+    async sendInitialState(socket) {
+        // Send all cached chunks
+        for (const [chunkKey, chunk] of this.tileCache) {
+            const [x, z] = chunkKey.split(',').map(Number);
+
+            // Send tile URL if available
+            if (this.tileCache.has(chunkKey)) {
+                socket.emit('chunk-update', {
+                    x,
+                    z,
+                    url: `/tiles/${x}/${z}.png`
+                });
+            }
+        }
     }
 }
