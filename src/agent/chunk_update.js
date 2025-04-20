@@ -45,8 +45,11 @@ export class ChunkManager {
 
     serializeChunk(chunk) {
         try {
-            const column = this.bot.world.getColumn(chunk.x, chunk.z);
-            if (!column) return null;
+            const column = this.bot.world.getColumn(chunk.x / 16, chunk.z / 16);
+            if (!column) {
+                console.log("Failed to get " + chunk.x + " : " + chunk.y);
+                return null;
+            }
 
             // Calculate vertical range around player
             const centerY = Math.floor(this.bot.entity.position.y);

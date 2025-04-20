@@ -5,6 +5,7 @@ export class WorldManager {
     constructor(web_viewer_io) {
         this.io = web_viewer_io;
         this.chunks = new Map(); // Stores chunks as "x,z" keys
+        this.sockets = []
 
         this.io.on('connection', (socket) => {
             this.handleConnection(socket);
@@ -17,25 +18,35 @@ export class WorldManager {
         socket.on('request-chunks', (data) => {
             const responseChunks = data.chunks.map(requested => {
                 const chunkKey = `${requested.x},${requested.z}`;
-                const storedChunk = this.chunks.get(chunkKey);
-                if (!storedChunk) return null;
-
-                // Handle Y-range requests
-                if (data.yRange) {
-                    const [yStart, yEnd] = data.yRange;
-                    return this.processChunkSlice(storedChunk, yStart, yEnd);
-                }
-
-                // Default to surface view
-                return this.processChunkSlice(storedChunk, 0, 255);
+                return this.createChunkMessage(chunkKey, data.yRange);
             }).filter(Boolean);
 
             socket.emit('chunk-data', responseChunks);
         });
 
         socket.on('get-cached-chunks', (callback) => {
-            callback(Array.from(this.chunks.values()));
+            let keys = [];
+            this.chunks.keys().forEach((index) => {
+                keys.push({ x: parseInt(index.split(',')[0]), z: parseInt(index.split(',')[1]) });
+            })
+            callback(JSON.stringify(keys));
         });
+
+        this.sockets.push(socket)
+    }
+
+    createChunkMessage(chunkKey, yRange = null) {
+        const storedChunk = this.chunks.get(chunkKey);
+        if (!storedChunk) return null;
+
+        // Handle Y-range requests
+        if (yRange) {
+            const [yStart, yEnd] = yRange;
+            return this.processChunkSlice(storedChunk, yStart, yEnd);
+        }
+
+        // Default to surface view
+        return this.processChunkSlice(storedChunk, 0, 255);
     }
 
     processChunkSlice(fullChunk, yStart, yEnd) {
@@ -175,5 +186,18 @@ export class WorldManager {
             'dirt': '#8B4513'      // Brown
         };
         return colors[blockName] || '#000000';
+    }
+
+    updateChunk(chunk) {
+        this.sockets.forEach((socket) => {
+            if (socket) {
+                if (socket.connected) {
+                    socket.emit('chunk-data', chunk);
+                }
+            } else {
+                let index = this.sockets.find(socket);
+                this.sockets.pop(index);
+            }
+        })
     }
 }

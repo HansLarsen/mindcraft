@@ -15,8 +15,12 @@ socket.on('log-update', (logs) => {
 });
 
 socket.on('update-log-partial', (update) => {
-    allLogs[update.name].push({ timestamp: update.timestamp, message: update.message });
-    updateLogView();
+    try {
+        allLogs[update.name].push({ timestamp: update.timestamp, message: update.message });
+        updateLogView();
+    } catch (error) {
+        console.log(error);
+    }
 })
 
 // Update visible logs

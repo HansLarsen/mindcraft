@@ -148,7 +148,7 @@ export class AgentManager {
     agentsUpdate() {
         let agents = [];
         this.registeredAgents.forEach(name => {
-            agents.push({ name, in_game: !!this.inGameAgents[name], port: 3000 + this.registeredAgentsPort[name] });
+            agents.push({ name, in_game: !!this.inGameAgents[name], port: 3050 + this.registeredAgentsPort[name] });
         });
         eventBus.emit('agents-update', agents);
     }

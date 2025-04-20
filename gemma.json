@@ -2,7 +2,7 @@
     "name": "gemma",
     "model": {
         "api": "ollama",
-        "model": "gemma3:12b",
+        "model": "gemma3:27b",
         "url": "http://127.0.0.1:11434",
         "params": {
             "temperature": 0.2
@@ -15,7 +15,7 @@
     },
     "vision_model": {
         "api": "ollama",
-        "model": "gemma3:12b",
+        "model": "gemma3:27b",
         "url": "http://127.0.0.1:11434"
     },
     "goal_setting": "create a dirt_shelter"

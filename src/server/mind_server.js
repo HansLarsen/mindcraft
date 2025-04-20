@@ -8,6 +8,8 @@ import { WebManager } from './web_manager.js';
 import { AgentManager } from './agent_manager.js';
 import { WorldManager } from './world_manager.js';
 import { LogManager } from './logger.js';
+import { eventBus } from './event_bus.js';
+import { getTimestamp } from '../utils/time.js';
 
 // Module-level variables
 let webIO;
@@ -16,6 +18,7 @@ let webServer;
 let agentServer;
 
 export function createMindServer(webPort = 8080) {
+    const logManager = new LogManager();
     // Create separate HTTP servers
     const webApp = express();
     webServer = http.createServer(webApp);
@@ -27,7 +30,6 @@ export function createMindServer(webPort = 8080) {
     // Initialize managers with appropriate IO instances
     const webmanager = new WebManager(webIO);
     const agentManager = new AgentManager(agentIO);
-    const logManager = new LogManager();
     const worldManager = new WorldManager(webIO);
 
     // Configure web server
@@ -70,7 +72,7 @@ function handleAgentView(req, res) {
     res.render('agent-viewer', {
         title: `${req.params.name} Viewer`,
         agentName: req.params.name,
-        agentPort: 3000
+        agentPort: 3050
     });
 }
 
@@ -79,3 +81,20 @@ export const getWebIO = () => webIO;
 export const getAgentIO = () => agentIO;
 export const getWebServer = () => webServer;
 export const getAgentServer = () => agentServer;
+
+(function () {
+    const originalLog = console.log;
+
+    console.log = function (message) {
+        try {
+            eventBus.emit('log', { name: "server", timestamp: getTimestamp(), log: JSON.stringify(arguments) })
+        } catch (err) {
+            if (err.code === 'EPIPE') {
+                console.error('Pipe broken, stopping log writes');
+            } else {
+                throw err; // Propagate other errors
+            }
+        }
+        originalLog.apply(console, arguments);
+    };
+})();

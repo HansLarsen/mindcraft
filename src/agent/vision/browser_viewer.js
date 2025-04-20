@@ -4,5 +4,5 @@ const mineflayerViewer = prismarineViewer.mineflayer;
 
 export function addBrowserViewer(bot, count_id) {
     if (settings.show_bot_views)
-        mineflayerViewer(bot, { port: 3000+count_id, firstPerson: true, });
+        mineflayerViewer(bot, { port: 3050 + count_id, firstPerson: true, });
 }
