@@ -197,12 +197,23 @@ export class WorldManager {
         const colors = {
             'air': '#87CEEB',     // Sky blue
             'grass_block': '#4CAF50', // Green
+            'short_grass': '#4CAF50',
             'stone': '#808080',    // Gray
             'water': '#2196F3',    // Blue
             'sand': '#FFD700',     // Gold
-            'dirt': '#8B4513'      // Brown
+            'dirt': '#8B4513',      // Brown
+            'birch_leaves': '#77fc03',
+            'oak_leaves': '#0e8501',
+            'spruce_leaves': '#0eff01',
+            'copper_ore': '#C68346',
+            'poppy': '#E35335',
+            'dandelion': '#F0E130',
+            'azalea_leaves': '#ECB4CE',
+            'flowering_azalea_leaves': '#ECB4CE',
+            'sugar_cane': '#80996d',
+            'coal_ore': '#00000'
         };
-        return colors[blockName] || '#000000';
+        return colors[blockName];
     }
 
     setupTileRoutes(app) {
@@ -237,8 +248,11 @@ export class WorldManager {
                 const blockName = column[y];
 
                 if (blockName !== 'air') {
-                    ctx.fillStyle = this.blockToColor(blockName);
-                    ctx.fillRect(x * 16, z * 16, 16, 16); // 16px per block
+                    const color = this.blockToColor(blockName);
+                    if (color) {
+                        ctx.fillStyle = color;
+                        ctx.fillRect(x * 16, z * 16, 16, 16); // 16px per block
+                    }
                 }
             }
         }

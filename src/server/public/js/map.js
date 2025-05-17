@@ -1,6 +1,8 @@
 
 const socket = io();
 
+let isRendering = false;
+
 // Initialize Leaflet Map
 const map = L.map('map', {
     crs: L.CRS.Simple,
@@ -60,3 +62,42 @@ function addGrid() {
     }
 }
 //addGrid();
+
+map.on('moveend', function () {
+    updateLayer()
+});
+
+function updateLayer() {
+    const bounds = map.getBounds();
+
+    // Calculate approximate chunk range based on bounds
+    const tileSize = 256; // Should match your chunkToBounds calculation
+
+    // Convert bounds to chunk coordinates
+    const minX = Math.floor(bounds.getWest() / tileSize);
+    const maxX = Math.floor(bounds.getEast() / tileSize);
+    const minZ = Math.floor(-bounds.getNorth() / tileSize);
+    const maxZ = Math.floor(-bounds.getSouth() / tileSize);
+
+    // Check chunks in this range
+    for (let x = minZ; x <= maxZ; x++) {
+        for (let z = minX; z <= maxX; z++) {
+            const key = `${x}|${z}`;
+            const chunk = tileCache.get(key);
+
+            if (chunk) {
+                const chunkBounds = chunkToBounds(chunk.z, chunk.x);
+
+                // Double-check bounds intersection (in case of edge cases)
+                if (bounds.intersects(chunkBounds)) {
+                    L.imageOverlay(chunk.url, chunkBounds, {
+                        className: `chunk-${chunk.x}-${chunk.z}`,
+                        interactive: true
+                    }).addTo(tileLayer);
+                }
+            }
+        }
+    }
+}
+
+updateLayer()

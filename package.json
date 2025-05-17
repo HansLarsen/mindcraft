@@ -14,6 +14,7 @@
         "gl": "^8.1.6",
         "google-translate-api-x": "^10.7.1",
         "groq-sdk": "^0.15.0",
+        "jszip": "^3.10.1",
         "minecraft-data": "^3.78.0",
         "mineflayer": "^4.27.0",
         "mineflayer-armor-manager": "^2.0.1",
